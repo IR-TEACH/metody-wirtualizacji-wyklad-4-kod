@@ -1,0 +1,8 @@
+# Ustawienia jawne (bez haseł): wspólne dla db i backendu.
+# Hasło jest w Secret "stacja", tworzonym z pliku .env (patrz README), nie w Gicie.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stacja
+data:
+  POSTGRES_USER: stacja

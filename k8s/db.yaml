@@ -1,0 +1,48 @@
+# PostgreSQL: Deployment z 1 repliką + Service "db" + wolumen (PVC).
+apiVersion: v1
+kind: PersistentVolumeClaim       # "wolumen nazwany" w K8s: dane przeżyją usunięcie poda
+metadata:
+  name: pgdata
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1                     # baza ma stan: nie skalujemy (W3, --scale db=2)
+  strategy:
+    type: Recreate                # przy zmianie: najpierw stary pod znika, potem nowy (nigdy dwa na tych samych plikach)
+  selector:
+    matchLabels: { app: db }
+  template:
+    metadata:
+      labels: { app: db }
+    spec:
+      containers:
+        - name: db
+          image: postgres:16-alpine
+          envFrom:                # POSTGRES_USER z ConfigMap, POSTGRES_PASSWORD z Secret
+            - configMapRef: { name: stacja }
+            - secretRef: { name: stacja }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: dane
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: dane
+          persistentVolumeClaim: { claimName: pgdata }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db                        # nazwa w DNS klastra: db
+spec:
+  selector: { app: db }
+  ports:
+    - port: 5432

@@ -1,0 +1,33 @@
+# Backend: obraz z GHCR zbudowany przez pipeline W3 (tag = SHA commita).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2                     # stan pożądany: zawsze 2 pody
+  selector:
+    matchLabels: { app: backend } # którymi podami zarządza
+  template:                       # wzór poda
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/ir-teach/stacja-backend:0a3fa12823b5ce5abaeaf99584459aa0a47aea9c
+          envFrom:
+            - configMapRef: { name: stacja }
+            - secretRef: { name: stacja }
+          env:                    # $(...) = wartość z ConfigMap / Secret powyżej
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/stacja
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend                   # stały adres: http://backend:8000
+spec:
+  selector: { app: backend }      # ruch do wszystkich GOTOWYCH podów z tą etykietą
+  ports:
+    - port: 8000

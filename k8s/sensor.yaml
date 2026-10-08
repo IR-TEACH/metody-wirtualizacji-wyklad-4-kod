@@ -1,0 +1,19 @@
+# Czujniki: każdy pod losuje swoją salę, więc 3 repliki = 3 sale.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: sensor }
+  template:
+    metadata:
+      labels: { app: sensor }
+    spec:
+      containers:
+        - name: sensor
+          image: ghcr.io/ir-teach/stacja-sensor:0a3fa12823b5ce5abaeaf99584459aa0a47aea9c
+          env:
+            - name: BACKEND_URL
+              value: http://backend:8000
